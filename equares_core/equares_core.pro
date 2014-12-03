@@ -19,8 +19,9 @@ contains(DEFINES, EQUARES_CORE_STATIC) {
 
 !isEmpty(ACML_DIR) {
     INCLUDEPATH += $$ACML_DIR/include
-    LIBS += -L$$ACML_DIR/lib -lacml
     DEFINES += WITH_ACML
+    unix: LIBS += -L$$ACML_DIR/lib -lacml
+    win32: LIBS += -L$$ACML_DIR/lib -llibacml_dll
 }
 
 SOURCES += equares_core.cpp \
