@@ -22,15 +22,35 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     QStringList args = a.arguments();
-    if (args.length() != 3) {
+    QFile input;
+    bool base64input = false;
+    if (args.length() == 4) {
+        if(args.last() == "64") {
+            base64input = true;
+            input.open(stdin, QIODevice::ReadOnly);
+            Q_ASSERT(input.isOpen());
+        }
+        else {
+            input.setFileName(args.last());
+            if (!input.open(QIODevice::ReadOnly)) {
+                cerr << "Failed to open input file " << args.last().toStdString() << endl;
+                return -1;
+            }
+        }
+    }
+    else if (args.length() != 3) {
         cerr << "Image max width and height arguments were required" << endl;
         return -1;
     }
+    else {
+        input.open(stdin, QIODevice::ReadOnly);
+        Q_ASSERT(input.isOpen());
+    }
     int width = args[1].toInt(), height = args[2].toInt();
 
-    QFile input;
-    input.open(stdin, QIODevice::ReadOnly);
     QByteArray data = input.readAll();
+    if (base64input)
+        data = QByteArray::fromBase64(data);
 
     QImage srcimg;
     if (!srcimg.loadFromData(data)) {

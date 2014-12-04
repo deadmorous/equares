@@ -131,13 +131,15 @@ function getImage(req, res) {
 function imgresize(img, param, cb)
 {
     var dir = process.env["EQUARES_BIN"];
+    param.push(64)
     var imgresize = cp.spawn(dir + '/imgresize', param, {cwd: dir})
     var resized = '', stderr = ''
     imgresize.stdin.on('error', function(err) {
         console.log('imgresize input error')
         console.log(err)
     })
-    imgresize.stdin.end(img.data, 'binary')
+    var sss = new Buffer(img.data, 'binary').toString('base64')
+    imgresize.stdin.end(sss, 'binary')
     imgresize.stdout.setEncoding('binary')
     imgresize.stdout.on('data', function(data) {
         resized += new Buffer(data, 'base64').toString('binary')
@@ -158,7 +160,6 @@ function imgresize(img, param, cb)
     imgresize.on('error', function(err) {
         console.log('Unable to run imgresize')
         console.log(err)
-        throw err
     })
     imgresize.stderr.on('data', function(data) {
         stderr += data
