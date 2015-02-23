@@ -42,8 +42,12 @@ formatInfo.init = function (elementId) {
     })
 
     MathJax.Hub.Register.MessageHook("End Process", function (message) {
-        var e = $(message[1])
-        e.html(marked(e.html(), {renderer: myren}))
+        var e = message[1]
+        if (!e)
+            // No element has been rendered, don't try to wrap e
+            return
+        var j = $(e)
+        j.html(marked(j.html(), {renderer: myren}))
     })
 
     function LatexEquationNumbersReset() {
