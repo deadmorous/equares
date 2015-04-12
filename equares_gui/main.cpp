@@ -10,7 +10,6 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 
 #include <QApplication>
 #include "MainWindow.h"
-#include "equares_core/equares_core.h"
 
 int main(int argc, char *argv[])
 {

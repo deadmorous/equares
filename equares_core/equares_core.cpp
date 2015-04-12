@@ -12,6 +12,27 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include <QSet>
 #include <QScriptEngine>
 
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+QTextStream& equaresSimLog()
+{
+    static QFile f("equares_simulation_log.txt");
+    static QTextStream s(&f);
+    static bool open = false;
+    if (!open) {
+        open = true;
+        f.open(QIODevice::WriteOnly);
+    }
+    return s;
+}
+
+int equaresNextLogOperationId()
+{
+    static int id = 0;
+    return ++id;
+}
+
+#endif // EQUARES_DUMP_SIMULATION_LOG
+
 QString Box::decoratedName() const {
     return simulation()->decoratedBoxName(this);
 }
@@ -301,7 +322,11 @@ void Runner::run()
                 foreach (RuntimeBox::Ptr box, m_rtboxes) {
                     RuntimeBox::PortNotifier postprocessor = box->postprocessor();
                     if (postprocessor)
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+                        postPortActivation(box.data(), postprocessor, 0, "POSTPROCESSOR " + box->owner()->name());
+#else // EQUARES_DUMP_SIMULATION_LOG
                         postPortActivation(box.data(), postprocessor, 0);
+#endif // EQUARES_DUMP_SIMULATION_LOG
                 }
             }
         }
@@ -314,13 +339,21 @@ void Runner::run()
             if(box) {
                 if (box->generator()) {
                     Q_ASSERT(box->inputPorts().empty());
-                    postPortActivation(box, box->generator(), 0);
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+                        postPortActivation(box, box->generator(), 0, "GENERATOR " + box->owner()->name());
+#else // EQUARES_DUMP_SIMULATION_LOG
+                        postPortActivation(box, box->generator(), 0);
+#endif // EQUARES_DUMP_SIMULATION_LOG
                 }
                 else {
                     foreach (const RuntimeOutputPort *port, box->outputPorts())
                         foreach (const RuntimeLink *link, port->links()) {
                             RuntimeInputPort *inport = link->inputPort();
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+                            postPortActivation(inport->owner(), inport->portNotifier(), inport->portId(), inport->toString());
+#else // EQUARES_DUMP_SIMULATION_LOG
                             postPortActivation(inport->owner(), inport->portNotifier(), inport->portId());
+#endif // EQUARES_DUMP_SIMULATION_LOG
                         }
                 }
             }
@@ -343,7 +376,11 @@ void Runner::initQueue()
     foreach (RuntimeBox::Ptr box, m_rtboxes) {
         RuntimeBox::PortNotifier preprocessor = box->preprocessor();
         if (preprocessor)
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+            postPortActivation(box.data(), preprocessor, 0, "PREPROCESSOR " + box->owner()->name());
+#else // EQUARES_DUMP_SIMULATION_LOG
             postPortActivation(box.data(), preprocessor, 0);
+#endif // EQUARES_DUMP_SIMULATION_LOG
     }
 
     // Enqueue regular sources
@@ -352,14 +389,22 @@ void Runner::initQueue()
             foreach (const RuntimeOutputPort *port, box->outputPorts())
                 foreach (const RuntimeLink *link, port->links()) {
                     RuntimeInputPort *inport = link->inputPort();
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+                    postPortActivation(inport->owner(), inport->portNotifier(), inport->portId(), inport->toString());
+#else // EQUARES_DUMP_SIMULATION_LOG
                     postPortActivation(inport->owner(), inport->portNotifier(), inport->portId());
+#endif // EQUARES_DUMP_SIMULATION_LOG
                 }
 
     // Enqueue generators
     foreach (const RuntimeBox::Ptr& box, m_rtboxes)
         if (box->generator()) {
             Q_ASSERT(box->inputPorts().empty());
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+            postPortActivation(box.data(), box->generator(), 0, "GENERATOR " + box->owner()->name());
+#else // EQUARES_DUMP_SIMULATION_LOG
             postPortActivation(box.data(), box->generator(), 0);
+#endif // EQUARES_DUMP_SIMULATION_LOG
         }
 }
 
@@ -376,11 +421,19 @@ bool Runner::terminationRequested() const {
     return terminationRequested != 0;
 }
 
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+void Runner::postPortActivation(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg, const QString& itemId) {
+    Q_ASSERT(box);
+    if (notifier)
+        m_queue << QueueItem(box, notifier, notifierArg, itemId);
+}
+#else // EQUARES_DUMP_SIMULATION_LOG
 void Runner::postPortActivation(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg) {
     Q_ASSERT(box);
     if (notifier)
         m_queue << QueueItem(box, notifier, notifierArg);
 }
+#endif // EQUARES_DUMP_SIMULATION_LOG
 
 const QVector<RuntimeBox *> &Runner::rtboxes() const {
     return m_rtboxvec;

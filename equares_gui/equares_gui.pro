@@ -15,8 +15,15 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        MainWindow.cpp
+    MainWindow.cpp \
+    SimVisualizer.cpp \
+    Animator.cpp
 
-HEADERS  += MainWindow.h
+HEADERS  += MainWindow.h \
+    sim_types.h \
+    SimVisualizer.h \
+    Animator.h
 
 FORMS    += MainWindow.ui
+
+LIBS += -lequares_core

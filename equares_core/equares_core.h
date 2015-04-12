@@ -26,6 +26,13 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include "EquaresException.h"
 #include "equares_exec.h"
 
+#define EQUARES_DUMP_SIMULATION_LOG
+
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+QTextStream& equaresSimLog();
+int equaresNextLogOperationId();
+#endif // EQUARES_DUMP_SIMULATION_LOG
+
 class Box;
 class Port;
 class InputPort;
@@ -452,6 +459,12 @@ public:
 
     inline PortState& state();
     inline const PortState& state() const;
+
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+    QString toString() const {
+        return "INPUT PORT " + port()->owner()->name() + ":" + port()->name();
+    }
+#endif // EQUARES_DUMP_SIMULATION_LOG
 };
 
 class RuntimeOutputPort :
@@ -473,11 +486,27 @@ public:
         return false;
     }
     bool activateLinks() const {
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+        int id = equaresNextLogOperationId();
+        equaresSimLog() << id << " ACTIVATE " << toString() << endl;
+#endif // EQUARES_DUMP_SIMULATION_LOG
         bool result = true;
-        foreach (const RuntimeLink *link, links())
+        foreach (const RuntimeLink *link, links()) {
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+        equaresSimLog() << id << " LINK TO " << link->inputPort()->toString() << endl;
+#endif // EQUARES_DUMP_SIMULATION_LOG
             result = link->inputPort()->activate() && result;
+        }
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+        equaresSimLog() << id << " RESULT " << result << endl;
+#endif // EQUARES_DUMP_SIMULATION_LOG
         return result;
     }
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+    QString toString() const {
+        return "OUTPUT PORT " + port()->owner()->name() + ":" + port()->name();
+    }
+#endif // EQUARES_DUMP_SIMULATION_LOG
 };
 
 inline const PortData& RuntimeInputPort::data() const {
@@ -597,7 +626,11 @@ public:
     void requestTermination();
     bool terminationRequested() const;
 
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+    void postPortActivation(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg, const QString& itemId);
+#else // EQUARES_DUMP_SIMULATION_LOG
     void postPortActivation(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg);
+#endif // EQUARES_DUMP_SIMULATION_LOG
     const QVector<RuntimeBox*>& rtboxes() const;
 
 private:
@@ -607,20 +640,36 @@ private:
 
     class QueueItem {
     public:
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+        QueueItem(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg, const QString& itemId) :
+            box(box), notifier(notifier), notifierArg(notifierArg), m_itemId(itemId)
+#else // EQUARES_DUMP_SIMULATION_LOG
         QueueItem(RuntimeBox *box, RuntimeBox::PortNotifier notifier, int notifierArg) :
             box(box), notifier(notifier), notifierArg(notifierArg)
+#endif // EQUARES_DUMP_SIMULATION_LOG
         {
             Q_ASSERT(box);
             Q_ASSERT(notifier);
         }
         bool activate() const {
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+            int id = equaresNextLogOperationId();
+            equaresSimLog() << id << " ACTIVATE_FROM_QUEUE " << m_itemId << endl;
+            bool result = (box->*notifier)(notifierArg);
+            equaresSimLog() << id << " RESULT " << result << endl;
+            return result;
+#else // EQUARES_DUMP_SIMULATION_LOG
             return (box->*notifier)(notifierArg);
+#endif // EQUARES_DUMP_SIMULATION_LOG
         }
 
     private:
         RuntimeBox *box;
         RuntimeBox::PortNotifier notifier;
         int notifierArg;
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+        QString m_itemId;
+#endif // EQUARES_DUMP_SIMULATION_LOG
     };
 
     QList<QueueItem> m_queue;
@@ -630,10 +679,27 @@ private:
 };
 
 inline bool RuntimeInputPort::activate() const {
+#ifdef EQUARES_DUMP_SIMULATION_LOG
+    int id = equaresNextLogOperationId();
+    equaresSimLog() << id << " ACTIVATE " << toString() << endl;
+    RuntimeBox::PortNotifier notifier = portNotifier();
+    bool result;
+    if (notifier) {
+        equaresSimLog() << id << " HANDLED" << endl;
+        result = (owner()->*notifier)(portId());
+    }
+    else {
+        equaresSimLog() << id << " UNHANDLED" << endl;
+        result = true;
+    }
+    equaresSimLog() << id << " RESULT " << result << endl;
+    return result;
+#else // EQUARES_DUMP_SIMULATION_LOG
     RuntimeBox::PortNotifier notifier = portNotifier();
     if (!notifier)
         return true;
     return (owner()->*notifier)(portId());
+#endif // EQUARES_DUMP_SIMULATION_LOG
 }
 
 class EQUARES_CORESHARED_EXPORT BoxFactory
