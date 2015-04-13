@@ -34,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_animator, SIGNAL(setPortHighlight(GuiLinkTarget,double,bool)), m_simVis, SLOT(setPortHighlight(GuiLinkTarget,double,bool)));
     connect(m_animator, SIGNAL(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)), m_simVis, SLOT(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)));
     connect(m_animator, SIGNAL(commitAnimationFrame()), m_simVis, SLOT(update()));
+    connect(m_animator, SIGNAL(startAnimation()), m_simVis, SLOT(startAnimation()));
+    connect(m_animator, SIGNAL(endAnimation()), m_simVis, SLOT(endAnimation()));
 }
 
 MainWindow::~MainWindow()
