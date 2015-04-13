@@ -12,6 +12,11 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include <QPainter>
 #include <cmath>
 
+inline QString linkKey(const GuiLinkTarget& t1, const GuiLinkTarget& t2)
+{
+    return t1.toString() + "-" + t2.toString();
+}
+
 SimVisualizer::SimVisualizer(QWidget *parent) :
     QWidget(parent),
     m_sim(0)
@@ -41,7 +46,7 @@ void SimVisualizer::setPortHighlight(const GuiLinkTarget& target, double amount,
 
 void SimVisualizer::setLinkHighlight(const GuiLinkTarget& from, const GuiLinkTarget& to, double amount, bool status)
 {
-    m_linkHighlight[from.toString() + "-" + to.toString()] = HL(amount, status);
+    m_linkHighlight[linkKey(from, to)] = HL(amount, status);
 }
 
 static QSizeF textSize(QPainter *painter, const QString& text)
@@ -111,6 +116,14 @@ static void cropLinkLine(QPointF& p1, QPointF& p2, double radius)
     p2 -= d;
 }
 
+static QLineF linePart(const QLineF& line, double from, double to)
+{
+    QPointF p1 = line.p1(),   p2 = line.p2(),   d = p2 - p1;
+    p1 += from*d;
+    p2 -= (1-to)*d;
+    return QLineF(p1, p2);
+}
+
 QColor SimVisualizer::hlColor(const QColor &normal, const QColor &good, const QColor &bad, const HL& hl)
 {
     const QColor& mixin = hl.status == 0? bad: good;
@@ -145,8 +158,9 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
     if (!m_sim)
         return;
     QPen boxOutlinePen(QColor(0xcccccc), 2), textPen(Qt::black), inputPortPen(QColor(0xff0000), 1), outputPortPen(QColor(0x0000ff), 1);
-    QBrush boxBrush(0xeeeeee), inputPortBrush(0xffbbbb), outputPortBrush(0xbbbbff);
-    QBrush boxBrush0(0xffcccc), boxBrush1(0xccffcc);
+    QBrush boxBrush(0xeeeeee), boxBrush0(0xff6666), boxBrush1(0x66ff66),
+           inputPortBrush(0xffbbbb), inputPortBrush0(0xff0000), inputPortBrush1(0x00ff00),
+           outputPortBrush(0xbbbbff), outputPortBrush0(0xff0000), outputPortBrush1(0x00ff00);
     QFont f;
     const int FontSize = 16;
     const double PortRadius = 4;
@@ -162,14 +176,16 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
         foreach(const GuiPort& port, box.ports)
         {
             QPointF pos = portPos(rc, port.pos);
+            QString targetName = GuiLinkTarget(box.name, port.name).toString();
             switch (port.dir) {
             case GuiInputPort:
                 painter.setPen(inputPortPen);
+                setBrush(&painter, inputPortBrush, inputPortBrush1, inputPortBrush0, m_portHighlight, targetName);
                 painter.setBrush(inputPortBrush);
                 break;
             case GuiOutputPort:
                 painter.setPen(outputPortPen);
-                painter.setBrush(outputPortBrush);
+                setBrush(&painter, outputPortBrush, outputPortBrush1, outputPortBrush0, m_portHighlight, targetName);
                 break;
             default:
                 Q_ASSERT(false);
@@ -178,13 +194,35 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
         }
     }
 
-    QPen linkPen(QColor(0xbbbbbb), 5, Qt::SolidLine, Qt::FlatCap);
-    painter.setPen(linkPen);
+    QPen
+        linkPen(QColor(0xbbbbbb), 5, Qt::SolidLine, Qt::FlatCap),
+        linkPen0(QColor(0xffbbbb), 5, Qt::SolidLine, Qt::FlatCap),
+        linkPen1(QColor(0xbbffbb), 5, Qt::SolidLine, Qt::FlatCap);
     foreach (const GuiLink& link, m_sim->links)
     {
         QPointF p1 = portPos(&painter, link.first, m_sim),   p2 = portPos(&painter, link.second, m_sim);
         cropLinkLine(p1, p2, PortRadius);
-        painter.drawLine(p1, p2);
+        bool inv = false;
+        HLMap::const_iterator it = m_linkHighlight.find(linkKey(link.first, link.second));
+        if (it == m_linkHighlight.end()) {
+            it = m_linkHighlight.find(linkKey(link.second, link.first));
+            if (it == m_linkHighlight.end()) {
+                painter.setPen(linkPen);
+                painter.drawLine(p1, p2);
+                continue;
+            }
+            inv = true;
+        }
+        else
+            inv = false;
+        if (inv)
+            qSwap(p1, p2);
+        QLineF line(p1, p2);
+        const HL& hl = it.value();
+        painter.setPen(hl.status == 0? linkPen0: linkPen1);
+        painter.drawLine(linePart(line, 0, hl.amount));
+        painter.setPen(linkPen);
+        painter.drawLine(linePart(line, hl.amount, 1));
     }
 
     // painter.drawText(rect(), Qt::AlignCenter, "Hello");
