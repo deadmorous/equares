@@ -53,7 +53,7 @@ void MainWindow::openFile()
         if (!f.open(QIODevice::ReadOnly))
             throw tr("Failed to open input file %1").arg(fileName);
         QString text = QString::fromUtf8(f.readAll());
-        QScriptValue v = m_jsEngine.evaluate(QString("JSON.parse(%1)").arg(text));
+        QScriptValue v = m_jsEngine.evaluate(QString("JSON.parse(%1.definition)").arg(text));
         if (m_jsEngine.hasUncaughtException())
             throw tr("ERROR: %1:%2:\n%3").arg(fileName).arg(m_jsEngine.uncaughtExceptionLineNumber()).arg(v.toString());
 
@@ -132,8 +132,9 @@ void MainWindow::finalizeActivationData(QVector<int>& callerId, int id, int resu
     callerId.pop_back();
 }
 
-GuiLinkTarget MainWindow::parseActivatorTarget(const QString& s)
+GuiLinkTarget MainWindow::parseActivatorTarget(const QStringList& tokens, int idx)
 {
+    QString s = QStringList(tokens.mid(idx)).join(" ");
     QStringList lst = s.split(":");
     if (lst.size() != 2)
         throw tr("Failed to parse link target %1").arg(s);
@@ -172,7 +173,7 @@ void MainWindow::openAnimation() {
                 GuiLinkTarget target;
                 if (lst[2] == "INPUT" && lst[3] == "PORT") {
                     type = InputPortActivator;
-                    target = parseActivatorTarget(lst[4]);
+                    target = parseActivatorTarget(lst, 4);
                 }
                 else if (lst[2] == "GENERATOR") {
                     type = GeneratorActivator;
@@ -199,7 +200,7 @@ void MainWindow::openAnimation() {
                     type = OutputPortActivator;
                 else
                     throw tr("Unknown activator type in %1:%2").arg(fileName).arg(lineNumber);
-                GuiLinkTarget target = parseActivatorTarget(lst[4]);
+                GuiLinkTarget target = parseActivatorTarget(lst, 4);
                 d = ActivationData(id, type, target, callerId.back());
             }
             else if (lst[1] == "HANDLED")

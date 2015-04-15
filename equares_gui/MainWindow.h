@@ -41,7 +41,7 @@ private:
     static GuiLinkTarget toGuiLinkTarget(const QScriptValue& scriptLinkTarget);
     static void commitActivationData(QVector<int>& callerId, ActivationData& d, Animator *animator);
     static void finalizeActivationData(QVector<int>& callerId, int id, int result, Animator *animator);
-    static GuiLinkTarget parseActivatorTarget(const QString& s);
+    static GuiLinkTarget parseActivatorTarget(const QStringList& tokens, int idx);
 
 private slots:
     void openFile();
