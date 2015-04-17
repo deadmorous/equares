@@ -2,5 +2,7 @@ equares-cache/
 node_modules/
 data/
 users/
+public/MathJax-2.4-latest/
+public/mathjax.zip
 email-settings.json
 
