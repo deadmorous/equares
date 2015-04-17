@@ -84,7 +84,7 @@ To run equares http server, you will need to install
 * [npm](https://www.npmjs.org/)
 * [mongoDB](http://www.mongodb.org/)
 * node modules mentioned above; this is done with the command ```npm install``` issued from the ```equares_http``` subdirectory.
-* [MathJax](https://www.mathjax.org/) &mdash; Run the script ```install-mathjax.sh``` cfrom within the ```equares_http``` subdirectory.
+* [MathJax](https://www.mathjax.org/) &mdash; run ```./install-mathjax.sh``` from within the ```equares_http``` subdirectory.
 
 The EQUARES_BIN environment variable must be set to point to the directory containing  core binaries, e.g. (on Linux, prvided
 the build root is ```$HOME/build-equares-release```),
