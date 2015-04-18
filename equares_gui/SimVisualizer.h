@@ -11,16 +11,22 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #ifndef SIMVISUALIZER_H
 #define SIMVISUALIZER_H
 
-#include <QWidget>
+#include <QObject>
+#include <QColor>
+#include <QBrush>
 #include "sim_types.h"
 
-class SimVisualizer : public QWidget
+class QPainter;
+
+class SimVisualizer : public QObject
 {
     Q_OBJECT
 public:
-    explicit SimVisualizer(QWidget *parent = 0);
-    
+    explicit SimVisualizer(QObject *parent = 0);
+    void paint(QPainter *painter);
+
 signals:
+    void update();
     
 public slots:
     const GuiSimulation *simulation() const;
@@ -31,9 +37,6 @@ public slots:
     void setLinkHighlight(const GuiLinkTarget& from, const GuiLinkTarget& to, double amount, bool status);
     void startAnimation();
     void endAnimation();
-
-protected:
-    void paintEvent(QPaintEvent *event);
 
 private:
     const GuiSimulation *m_sim;

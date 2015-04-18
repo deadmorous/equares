@@ -29,12 +29,15 @@ public:
     int timerInterval() const;
     bool isPlaying() const;
 
+    bool run(int maxFrameCount);
+
 public slots:
     void play();
     void stop();
     void setTimeStep(int timeStep);
     void setStepSubdivision(int n);
     void setTimerInterval(int msec);
+    void nextAnimationFrame();
 
 signals:
     void setBoxHighlight(const QString& boxName, double amount, bool status);
@@ -55,7 +58,6 @@ private:
     int m_timerId;
     int m_timeStep;
     int m_subStep;
-    void nextAnimationFrame();
 };
 
 #endif // ANIMATOR_H

@@ -64,6 +64,20 @@ bool Animator::isPlaying() const {
     return m_timerId != -1;
 }
 
+bool Animator::run(int maxFrameCount) {
+    if (isPlaying())
+        return false;
+    m_subStep = 0;
+    emit startAnimation();
+    int frame = 0;
+    while(m_timeStep < m_timeLine.size()   &&   frame < maxFrameCount) {
+        nextAnimationFrame();
+        ++frame;
+    }
+    emit endAnimation();
+    return true;
+}
+
 void Animator::play()
 {
     if (isPlaying())

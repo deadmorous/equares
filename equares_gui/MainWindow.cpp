@@ -10,9 +10,14 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include <cmath>
 #include <QFileDialog>
 #include <QFile>
 #include <QMessageBox>
+#include <QPainter>
+#include <QImage>
+#include <QPixmap>
+#include "QVideoEncoder.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -22,20 +27,24 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_Quit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->action_Open, SIGNAL(triggered()), SLOT(openFile()));
 
-    m_simVis = new SimVisualizer();
-    m_simVis->setSimulation(&m_sim);
-    setCentralWidget(m_simVis);
+    m_simVisWidget = new SimVisualizerWidget();
+    SimVisualizer *simVis = m_simVisWidget->simVisualizer();
+    Q_ASSERT(simVis);
+    simVis->setSimulation(&m_sim);
+    setCentralWidget(m_simVisWidget);
 
     m_animator = new Animator(this);
     connect(ui->actionOpen_animation, SIGNAL(triggered()), SLOT(openAnimation()));
     connect(ui->action_Start, SIGNAL(triggered()), m_animator, SLOT(play()));
     connect(ui->actionStop, SIGNAL(triggered()), m_animator, SLOT(stop()));
-    connect(m_animator, SIGNAL(setBoxHighlight(QString,double,bool)), m_simVis, SLOT(setBoxHighlight(QString,double,bool)));
-    connect(m_animator, SIGNAL(setPortHighlight(GuiLinkTarget,double,bool)), m_simVis, SLOT(setPortHighlight(GuiLinkTarget,double,bool)));
-    connect(m_animator, SIGNAL(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)), m_simVis, SLOT(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)));
-    connect(m_animator, SIGNAL(commitAnimationFrame()), m_simVis, SLOT(update()));
-    connect(m_animator, SIGNAL(startAnimation()), m_simVis, SLOT(startAnimation()));
-    connect(m_animator, SIGNAL(endAnimation()), m_simVis, SLOT(endAnimation()));
+    connect(ui->actionRecord_video, SIGNAL(triggered()), SLOT(recordVideo()));
+
+    connect(m_animator, SIGNAL(setBoxHighlight(QString,double,bool)), simVis, SLOT(setBoxHighlight(QString,double,bool)));
+    connect(m_animator, SIGNAL(setPortHighlight(GuiLinkTarget,double,bool)), simVis, SLOT(setPortHighlight(GuiLinkTarget,double,bool)));
+    connect(m_animator, SIGNAL(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)), simVis, SLOT(setLinkHighlight(GuiLinkTarget,GuiLinkTarget,double,bool)));
+    connect(m_animator, SIGNAL(commitAnimationFrame()), m_simVisWidget, SLOT(update()));
+    connect(m_animator, SIGNAL(startAnimation()), simVis, SLOT(startAnimation()));
+    connect(m_animator, SIGNAL(endAnimation()), simVis, SLOT(endAnimation()));
 }
 
 MainWindow::~MainWindow()
@@ -113,7 +122,7 @@ void MainWindow::openFile()
     catch(const QString& msg) {
         QMessageBox::critical(this, QString(), msg);
     }
-    m_simVis->update();
+    m_simVisWidget->update();
 }
 
 void MainWindow::commitActivationData(QVector<int>& callerId, ActivationData& d, Animator *animator)
@@ -141,7 +150,8 @@ GuiLinkTarget MainWindow::parseActivatorTarget(const QStringList& tokens, int id
     return GuiLinkTarget(lst[0], lst[1]);
 }
 
-void MainWindow::openAnimation() {
+void MainWindow::openAnimation()
+{
     QString fileName = QFileDialog::getOpenFileName(this, "Open simulation file");
     if (fileName.isEmpty())
         return;
@@ -222,6 +232,91 @@ void MainWindow::openAnimation() {
     catch(const QString& msg) {
         QMessageBox::critical(this, QString(), msg);
     }
+}
+
+static void image2Pixmap(const QImage &img,QPixmap &pixmap)
+{
+   // Convert the QImage to a QPixmap for display
+   pixmap = QPixmap(img.size());
+   QPainter painter;
+   painter.begin(&pixmap);
+   painter.drawImage(0,0,img);
+   painter.end();
+}
+
+void MainWindow::recordVideo()
+{
+    QString filename = "test.mpeg";
+    bool vfr = false;
+
+    int width=640;
+    int height=480;
+    int bitrate=5000000;
+    int gop = 5;
+    int fps = 25;
+
+    // The image on which we draw the frames
+    QImage frame(width,height,QImage::Format_RGB32);     // Only RGB32 is supported
+
+    // A painter to help us draw
+    QPainter painter(&frame);
+    painter.setBrush(Qt::red);
+    painter.setPen(Qt::white);
+
+    // Create the encoder
+    QVideoEncoder encoder;
+    if(!vfr)
+       encoder.createFile(filename,width,height,bitrate,gop,fps);        // Fixed frame rate
+    else
+       encoder.createFile(filename,width,height,bitrate*1000/fps,gop,1000);  // For variable frame rates: set the time base to e.g. 1ms (1000fps),
+                                                                            // and correct the bitrate according to the expected average frame rate (fps)
+
+    // QEventLoop evt;      // we use an event loop to allow for paint events to show on-screen the generated video
+    SimVisualizer *simVis = m_simVisWidget->simVisualizer();
+    Q_ASSERT(simVis);
+    m_animator->stop();
+    m_animator->setTimeStep(0);
+
+    // Generate a few hundred frames
+    int size=0;
+    int maxframe=500;
+    unsigned pts=0;
+    for(unsigned i=0;i<maxframe;i++)
+    {
+       // Clear the frame
+       painter.fillRect(frame.rect(),Qt::white);
+
+       // Draw a moving square
+       // painter.fillRect(width*i/maxframe,height*i/maxframe,30,30,Qt::blue);
+       simVis->paint(&painter);
+       m_animator->nextAnimationFrame();
+
+       // Frame number
+       // painter.drawText(frame.rect(),Qt::AlignCenter,QString("Frame %1\nLast frame was %2 bytes").arg(i).arg(size));
+
+       // Display the frame, and processes events to allow for screen redraw
+       QPixmap p;
+       image2Pixmap(frame,p);
+       // ui->labelVideoFrame->setPixmap(p);
+       // evt.processEvents();
+
+       if(!vfr)
+          size=encoder.encodeImage(frame);                      // Fixed frame rate
+       else
+       {
+          // Variable frame rate: the pts of the first frame is 0,
+          // subsequent frames slow down
+          pts += sqrt(i);
+          if(i==0)
+             size=encoder.encodeImagePts(frame,0);
+          else
+             size=encoder.encodeImagePts(frame,pts);
+       }
+
+       printf("Encoded: %d\n",size);
+    }
+
+    encoder.close();
 }
 
 Box::Ptr MainWindow::toBox(const QScriptValue& scriptBox)

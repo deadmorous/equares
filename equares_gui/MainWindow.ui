@@ -37,6 +37,7 @@
     <addaction name="actionOpen_animation"/>
     <addaction name="action_Start"/>
     <addaction name="actionStop"/>
+    <addaction name="actionRecord_video"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Animation"/>
@@ -91,6 +92,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionRecord_video">
+   <property name="text">
+    <string>Record &amp;video</string>
    </property>
   </action>
  </widget>

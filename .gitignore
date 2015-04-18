@@ -6,4 +6,6 @@
 *~
 *.autosave
 *.qch
+QTFFmpegWrapper/
+qtffmpegwrapper_src-20130507.zip
 

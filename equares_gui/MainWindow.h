@@ -15,7 +15,7 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include <QScriptEngine>
 #include "sim_types.h"
 #include "equares_core/equares_core.h"
-#include "SimVisualizer.h"
+#include "SimVisualizerWidget.h"
 #include "Animator.h"
 
 namespace Ui {
@@ -34,7 +34,7 @@ private:
     Ui::MainWindow *ui;
     QScriptEngine m_jsEngine;
     GuiSimulation m_sim;
-    SimVisualizer *m_simVis;
+    SimVisualizerWidget *m_simVisWidget;
     Animator *m_animator;
 
     static Box::Ptr toBox(const QScriptValue& scriptBox);
@@ -46,6 +46,7 @@ private:
 private slots:
     void openFile();
     void openAnimation();
+    void recordVideo();
 };
 
 #endif // MAINWINDOW_H

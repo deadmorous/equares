@@ -17,13 +17,17 @@ TEMPLATE = app
 SOURCES += main.cpp\
     MainWindow.cpp \
     SimVisualizer.cpp \
-    Animator.cpp
+    Animator.cpp \
+    SimVisualizerWidget.cpp
 
 HEADERS  += MainWindow.h \
     sim_types.h \
     SimVisualizer.h \
-    Animator.h
+    Animator.h \
+    SimVisualizerWidget.h
 
 FORMS    += MainWindow.ui
 
 LIBS += -lequares_core
+
+!include (../QTFFmpegWrapper/config.pri):error("Couldn't find QTFFmpegWrapper - run install-qtffmpegwrapper.sh")

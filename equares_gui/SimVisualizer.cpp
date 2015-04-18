@@ -17,8 +17,8 @@ inline QString linkKey(const GuiLinkTarget& t1, const GuiLinkTarget& t2)
     return t1.toString() + "-" + t2.toString();
 }
 
-SimVisualizer::SimVisualizer(QWidget *parent) :
-    QWidget(parent),
+SimVisualizer::SimVisualizer(QObject *parent) :
+    QObject(parent),
     m_sim(0)
 {
 }
@@ -31,7 +31,7 @@ const GuiSimulation *SimVisualizer::simulation() const
 void SimVisualizer::setSimulation(const GuiSimulation *sim)
 {
     m_sim = sim;
-    update();
+    emit update();
 }
 
 void SimVisualizer::setBoxHighlight(const QString& boxName, double amount, bool status)
@@ -51,12 +51,12 @@ void SimVisualizer::setLinkHighlight(const GuiLinkTarget& from, const GuiLinkTar
 
 void SimVisualizer::startAnimation() {
     clearHighlights();
-    update();
+    emit update();
 }
 
 void SimVisualizer::endAnimation() {
     clearHighlights();
-    update();
+    emit update();
 }
 
 void SimVisualizer::clearHighlights() {
@@ -175,19 +175,17 @@ double SimVisualizer::portRadius(double rnormal, double rmax, const HLMap& hlm, 
         return rnormal + it.value().amount*(rmax-rnormal);
 }
 
-void SimVisualizer::paintEvent(QPaintEvent *event)
+void SimVisualizer::paint(QPainter *painter)
 {
-    Q_UNUSED(event);
-    QPainter painter(this);
-    painter.fillRect(rect(), palette().color(QPalette::Base));
-    painter.setRenderHint(QPainter::Antialiasing);
+    // painter->fillRect(rect, palette().color(QPalette::Base));
+    // painter->setRenderHint(QPainter::Antialiasing);
     if (!m_sim)
         return;
     QFont f;
     const int FontSize = 16;
     const double PortRadius = 4, MaxPortRadius = 7;
     f.setPixelSize(FontSize);
-    painter.setFont(f);
+    painter->setFont(f);
 
     {
         QPen
@@ -196,15 +194,15 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
             linkPen1(QColor(0x00cc00), 7, Qt::SolidLine, Qt::FlatCap);
         foreach (const GuiLink& link, m_sim->links)
         {
-            QPointF p1 = portPos(&painter, link.first, m_sim),   p2 = portPos(&painter, link.second, m_sim);
+            QPointF p1 = portPos(painter, link.first, m_sim),   p2 = portPos(painter, link.second, m_sim);
             cropLinkLine(p1, p2, PortRadius);
             bool inv = false;
             HLMap::const_iterator it = m_linkHighlight.find(linkKey(link.first, link.second));
             if (it == m_linkHighlight.end()) {
                 it = m_linkHighlight.find(linkKey(link.second, link.first));
                 if (it == m_linkHighlight.end()) {
-                    painter.setPen(linkPen);
-                    painter.drawLine(p1, p2);
+                    painter->setPen(linkPen);
+                    painter->drawLine(p1, p2);
                     continue;
                 }
                 inv = true;
@@ -215,10 +213,10 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
                 qSwap(p1, p2);
             QLineF line(p1, p2);
             const HL& hl = it.value();
-            painter.setPen(hl.status == 0? linkPen0: linkPen1);
-            painter.drawLine(linePart(line, 0, hl.amount));
-            painter.setPen(linkPen);
-            painter.drawLine(linePart(line, hl.amount, 1));
+            painter->setPen(hl.status == 0? linkPen0: linkPen1);
+            painter->drawLine(linePart(line, 0, hl.amount));
+            painter->setPen(linkPen);
+            painter->drawLine(linePart(line, hl.amount, 1));
         }
     }
 
@@ -228,30 +226,30 @@ void SimVisualizer::paintEvent(QPaintEvent *event)
                inputPortBrush(0xffbbbb), inputPortBrush0(0xff6666), inputPortBrush1(0xffee00),
                outputPortBrush(0xbbbbff), outputPortBrush0(0xff00ff), outputPortBrush1(0x00eeff);
         foreach (const GuiBox& box, m_sim->boxes) {
-            QRectF rc = boxRect(&painter, box);
-            painter.setPen(boxOutlinePen);
-            setBrush(&painter, boxBrush, boxBrush1, boxBrush0, m_boxHighlight, box.name);
-            painter.drawRoundedRect(rc, 3, 3);
-            painter.setPen(textPen);
-            painter.drawText(rc, Qt::AlignCenter, box.name);
+            QRectF rc = boxRect(painter, box);
+            painter->setPen(boxOutlinePen);
+            setBrush(painter, boxBrush, boxBrush1, boxBrush0, m_boxHighlight, box.name);
+            painter->drawRoundedRect(rc, 3, 3);
+            painter->setPen(textPen);
+            painter->drawText(rc, Qt::AlignCenter, box.name);
             foreach(const GuiPort& port, box.ports)
             {
                 QPointF pos = portPos(rc, port.pos);
                 QString targetName = GuiLinkTarget(box.name, port.name).toString();
                 switch (port.dir) {
                 case GuiInputPort:
-                    painter.setPen(inputPortPen);
-                    setBrush(&painter, inputPortBrush, inputPortBrush1, inputPortBrush0, m_portHighlight, targetName);
+                    painter->setPen(inputPortPen);
+                    setBrush(painter, inputPortBrush, inputPortBrush1, inputPortBrush0, m_portHighlight, targetName);
                     break;
                 case GuiOutputPort:
-                    painter.setPen(outputPortPen);
-                    setBrush(&painter, outputPortBrush, outputPortBrush1, outputPortBrush0, m_portHighlight, targetName);
+                    painter->setPen(outputPortPen);
+                    setBrush(painter, outputPortBrush, outputPortBrush1, outputPortBrush0, m_portHighlight, targetName);
                     break;
                 default:
                     Q_ASSERT(false);
                 }
                 double r = portRadius(PortRadius, MaxPortRadius, m_portHighlight, targetName);
-                painter.drawEllipse(pos, r, r);
+                painter->drawEllipse(pos, r, r);
             }
         }
     }
