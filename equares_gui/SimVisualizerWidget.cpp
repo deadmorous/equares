@@ -35,5 +35,5 @@ void SimVisualizerWidget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.fillRect(rect(), palette().color(QPalette::Base));
     painter.setRenderHint(QPainter::Antialiasing);
-    m_simVis->paint(&painter);
+    m_simVis->paint(&painter, rect());
 }

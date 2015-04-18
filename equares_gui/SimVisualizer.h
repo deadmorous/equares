@@ -14,6 +14,7 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include <QObject>
 #include <QColor>
 #include <QBrush>
+#include <QRectF>
 #include "sim_types.h"
 
 class QPainter;
@@ -23,7 +24,7 @@ class SimVisualizer : public QObject
     Q_OBJECT
 public:
     explicit SimVisualizer(QObject *parent = 0);
-    void paint(QPainter *painter);
+    void paint(QPainter *painter, const QRect &rect);
 
 signals:
     void update();
@@ -56,6 +57,10 @@ private:
     static QBrush hlBrush(const QBrush& normal, const QBrush&  good, const QBrush&  bad, const HL& hl);
     static void setBrush(QPainter *painter, const QBrush& normal, const QBrush&  good, const QBrush&  bad, const HLMap& hlm, const QString& key);
     static double portRadius(double rnormal, double rmax, const HLMap& hlm, const QString& key);
+
+    bool m_boundingRectValid;
+    QRectF m_boundingRect;
+    void computePainterTransform(QPainter *painter, const QRectF &rect);
 };
 
 #endif // SIMVISUALIZER_H

@@ -19,7 +19,8 @@ inline QString linkKey(const GuiLinkTarget& t1, const GuiLinkTarget& t2)
 
 SimVisualizer::SimVisualizer(QObject *parent) :
     QObject(parent),
-    m_sim(0)
+    m_sim(0),
+    m_boundingRectValid(false)
 {
 }
 
@@ -31,6 +32,7 @@ const GuiSimulation *SimVisualizer::simulation() const
 void SimVisualizer::setSimulation(const GuiSimulation *sim)
 {
     m_sim = sim;
+    m_boundingRectValid = false;
     emit update();
 }
 
@@ -175,8 +177,9 @@ double SimVisualizer::portRadius(double rnormal, double rmax, const HLMap& hlm, 
         return rnormal + it.value().amount*(rmax-rnormal);
 }
 
-void SimVisualizer::paint(QPainter *painter)
+void SimVisualizer::paint(QPainter *painter, const QRect& rect)
 {
+    painter->save();
     // painter->fillRect(rect, palette().color(QPalette::Base));
     // painter->setRenderHint(QPainter::Antialiasing);
     if (!m_sim)
@@ -186,6 +189,8 @@ void SimVisualizer::paint(QPainter *painter)
     const double PortRadius = 4, MaxPortRadius = 7;
     f.setPixelSize(FontSize);
     painter->setFont(f);
+
+    computePainterTransform(painter, rect);
 
     {
         QPen
@@ -253,4 +258,34 @@ void SimVisualizer::paint(QPainter *painter)
             }
         }
     }
+    painter->restore();
+}
+
+void SimVisualizer::computePainterTransform(QPainter *painter, const QRectF& rect)
+{
+    if (!m_boundingRectValid)
+    {
+        // Compute bounding rectangle
+        m_boundingRectValid = true;
+        m_boundingRect = QRectF();
+        if (m_sim) {
+            foreach(const GuiBox& box, m_sim->boxes)
+                m_boundingRect |= boxRect(painter, box);
+        }
+    }
+
+    if (rect.isEmpty()   ||   m_boundingRect.isEmpty())
+        return;
+    const double M = 0.05;
+    double
+        rb = m_boundingRect.width() / m_boundingRect.height(),
+        rr = rect.width() / rect.height(),
+        z;
+    if (rb > rr)
+        z = rect.width() / ((1 + M)*m_boundingRect.width());
+    else
+        z = rect.height() / ((1 + M)*m_boundingRect.height());
+    painter->translate(rect.center());
+    painter->scale(z, z);
+    painter->translate(-m_boundingRect.center());
 }

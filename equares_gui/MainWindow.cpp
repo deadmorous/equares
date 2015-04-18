@@ -118,6 +118,7 @@ void MainWindow::openFile()
         }
 
         m_sim = sim;
+        m_simVisWidget->simVisualizer()->setSimulation(&m_sim);
     }
     catch(const QString& msg) {
         QMessageBox::critical(this, QString(), msg);
@@ -276,10 +277,12 @@ void MainWindow::recordVideo()
     Q_ASSERT(simVis);
     m_animator->stop();
     m_animator->setTimeStep(0);
+    simVis->endAnimation();
+    simVis->startAnimation();
 
     // Generate a few hundred frames
     int size=0;
-    int maxframe=500;
+    int maxframe=1000;
     unsigned pts=0;
     for(unsigned i=0;i<maxframe;i++)
     {
@@ -288,7 +291,7 @@ void MainWindow::recordVideo()
 
        // Draw a moving square
        // painter.fillRect(width*i/maxframe,height*i/maxframe,30,30,Qt::blue);
-       simVis->paint(&painter);
+       simVis->paint(&painter, frame.rect());
        m_animator->nextAnimationFrame();
 
        // Frame number
