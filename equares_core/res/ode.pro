@@ -4,7 +4,7 @@ TEMPLATE = lib
 CONFIG += dll
 QMAKE_CXXFLAGS += -O2
 SOURCES += ode.cpp
-INCLUDES += ../../../../public/include
+INCLUDEPATH += ../../../../public/include
 
 #contains(QMAKESPEC, ^.*msvc.*$) {
 windows {

@@ -14,6 +14,6 @@ goto :end
 
 echo VSTOOLS = %VSTOOLS%
 call "%VSTOOLS%vsvars32.bat"
-cl /O2 /LD %1
+cl /O2 /LD /I../../../../public/include %1
 
 :end

@@ -93,7 +93,7 @@ static void buildLibNoQmake(const QDir& dir, const Box *box, const QString& libB
 
 static void buildLibNoQmake(const QDir& dir, const Box *box, const QString& libBaseName)
 {
-    QString cmdline = QString("g++ -Wall -shared -Wl,-soname,%1.so -fPIC -O2 -o %1.so %1.cpp").arg(libBaseName);
+    QString cmdline = QString("g++ -Wall -shared -Wl,-soname,%1.so -fPIC -O2 -I../../../../public/include -o %1.so %1.cpp").arg(libBaseName);
     QProcess proc;
     proc.setWorkingDirectory(dir.absolutePath());
     proc.start(cmdline);
