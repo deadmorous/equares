@@ -2,6 +2,11 @@
 operator new(unsigned long)
 operator delete(void*)
 
+# TODO: Find the right libs for these symbols
+__gxx_personality_v0
+_Unwind_Resume
+memmove
+
 # libc
 __cxa_finalize
 

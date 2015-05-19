@@ -15,6 +15,6 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 
 #include <QString>
 
-void checkLib(const QString& libName);
+void checkLib(const QString& libName, const QString& userClassName);
 
 #endif // CHECK_LIB_H

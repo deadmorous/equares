@@ -29,7 +29,7 @@ static QString readFile(const QString& fileName)
     return QString::fromUtf8(file.readAll());
 }
 
-void checkLib(const QString& libName)
+void checkLib(const QString& libName, const QString &userClassName)
 {
     static QString script;
     static QSet<QString> whiteList;
@@ -62,6 +62,7 @@ void checkLib(const QString& libName)
     if (procStdout.isEmpty())
         throw EquaresException(QObject::tr("Command\n%1\nreturned nothing").arg(cmd));
     QSet<QString> prohibitedSymbols;
+    QString userClassNamePrefix = userClassName + "::";
     foreach (const QString& line, procStdout.split('\n')) {
         if (line.isEmpty())
             continue;
@@ -72,6 +73,8 @@ void checkLib(const QString& libName)
         if (s.contains("::"))
             continue;   // Skip c++ symbols (TODO better)
 #endif // QT_DEBUG
+        if (s.contains(userClassNamePrefix))
+            continue;   // Skip methods of user's class
         if (!whiteList.contains(s))
             prohibitedSymbols << s;
     }

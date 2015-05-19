@@ -347,8 +347,10 @@ bool CxxBuildHelper::libUpToDate(const QString &libName, const QString& hashStri
 
 void CxxBuildHelper::checkLib(const QString& libName) const
 {
+    if (!extractNames())
+        throwBoxException(QString("Failed to extract names from library source code"));
     try {
-        ::checkLib(libName);
+        ::checkLib(libName, m_className);
     }
     catch(const std::exception& e) {
         throwBoxException(QString("Security check has failed on library file '%1':\n%2").arg(libName, QString::fromUtf8(e.what())));
