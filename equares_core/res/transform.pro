@@ -4,6 +4,7 @@ TEMPLATE = lib
 CONFIG += dll
 QMAKE_CXXFLAGS += -O2
 SOURCES += transform.cpp
+INCLUDEPATH += ../../../../public/include
 
 #contains(QMAKESPEC, ^.*msvc.*$) {
 windows {
