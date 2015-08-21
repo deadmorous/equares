@@ -17,6 +17,7 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include <QPainter>
 #include <QImage>
 #include <QPixmap>
+#include <QDebug>
 #include "QVideoEncoder.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -38,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_Start, SIGNAL(triggered()), m_animator, SLOT(play()));
     connect(ui->actionStop, SIGNAL(triggered()), m_animator, SLOT(stop()));
     connect(ui->actionRecord_video, SIGNAL(triggered()), SLOT(recordVideo()));
+    connect(ui->action_Record_PNG_sequence, SIGNAL(triggered()), SLOT(recordPngImages()));
+    connect(ui->actionRe_wind_to_the_beginning, SIGNAL(triggered()), SLOT(rewindToTheBeginning()));
 
     connect(m_animator, SIGNAL(setBoxHighlight(QString,double,bool)), simVis, SLOT(setBoxHighlight(QString,double,bool)));
     connect(m_animator, SIGNAL(setPortHighlight(GuiLinkTarget,double,bool)), simVis, SLOT(setPortHighlight(GuiLinkTarget,double,bool)));
@@ -186,6 +189,10 @@ void MainWindow::openAnimation()
                     type = InputPortActivator;
                     target = parseActivatorTarget(lst, 4);
                 }
+                else if (lst[2] == "OUTPUT" && lst[3] == "PORT") {
+                    type = OutputPortActivator;
+                    target = parseActivatorTarget(lst, 4);
+                }
                 else if (lst[2] == "GENERATOR") {
                     type = GeneratorActivator;
                     target = GuiLinkTarget(lst[3]);
@@ -235,6 +242,12 @@ void MainWindow::openAnimation()
     }
 }
 
+void MainWindow::rewindToTheBeginning()
+{
+    m_animator->stop();
+    m_animator->setTimeStep(0);
+}
+
 static void image2Pixmap(const QImage &img,QPixmap &pixmap)
 {
    // Convert the QImage to a QPixmap for display
@@ -250,9 +263,11 @@ void MainWindow::recordVideo()
     QString filename = "test.mpeg";
     bool vfr = false;
 
+//    int width=320;
+//    int height=240;
     int width=640;
     int height=480;
-    int bitrate=5000000;
+    int bitrate=2000000;
     int gop = 5;
     int fps = 25;
 
@@ -263,6 +278,7 @@ void MainWindow::recordVideo()
     QPainter painter(&frame);
     painter.setBrush(Qt::red);
     painter.setPen(Qt::white);
+    painter.setRenderHint(QPainter::Antialiasing);
 
     // Create the encoder
     QVideoEncoder encoder;
@@ -284,7 +300,7 @@ void MainWindow::recordVideo()
     int size=0;
     int maxframe=1000;
     unsigned pts=0;
-    for(unsigned i=0;i<maxframe;i++)
+    for(int i=0;i<maxframe && m_animator->timeStep() < m_animator->timeStepCount();i++)
     {
        // Clear the frame
        painter.fillRect(frame.rect(),Qt::white);
@@ -320,6 +336,66 @@ void MainWindow::recordVideo()
     }
 
     encoder.close();
+}
+
+static QString paddedNumber(int n, int size)
+{
+    QString s = QString::number(n);
+    size -= s.size();
+    if (size > 0)
+        s = QString(size, QChar::fromLatin1('0')) + s;
+    return s;
+}
+
+void MainWindow::recordPngImages()
+{
+    QDir("png").removeRecursively();
+    QDir dir;
+    if (!dir.mkdir("png"))
+        return;
+    dir.cd("png");
+
+    int width=320;
+    int height=240;
+    //    int width=640;
+    //    int height=480;
+
+    // The image on which we draw the frames
+    QImage frame(width,height,QImage::Format_RGB32);     // Only RGB32 is supported
+
+    // A painter to help us draw
+    QPainter painter(&frame);
+    painter.setBrush(Qt::red);
+    painter.setPen(Qt::white);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // QEventLoop evt;      // we use an event loop to allow for paint events to show on-screen the generated video
+    SimVisualizer *simVis = m_simVisWidget->simVisualizer();
+    Q_ASSERT(simVis);
+    m_animator->stop();
+    m_animator->setTimeStep(0);
+    m_animator->setStepSubdivision(3);
+    simVis->endAnimation();
+    simVis->startAnimation();
+
+    // Generate a few hundred frames
+    int maxframe=999;
+    for(int i=0;i<maxframe && m_animator->timeStep() < m_animator->timeStepCount();i++)
+    {
+       // Clear the frame
+       painter.fillRect(frame.rect(),Qt::white);
+
+       simVis->paint(&painter, frame.rect());
+       m_animator->nextAnimationFrame();
+       QString fileName = QString("frame_%1.png").arg(paddedNumber(i+1, 4));
+       QString filePath = dir.absoluteFilePath(fileName);
+       frame.save(filePath);
+
+       // Frame number
+       // painter.drawText(frame.rect(),Qt::AlignCenter,QString("Frame %1\nLast frame was %2 bytes").arg(i).arg(size));
+
+       qDebug() << "Saved frame " << i << " to file " << filePath;
+    }
 }
 
 Box::Ptr MainWindow::toBox(const QScriptValue& scriptBox)

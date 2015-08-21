@@ -76,7 +76,7 @@ static QSizeF textSize(QPainter *painter, const QString& text)
 
 static QRectF boxRect(QPainter *painter, const GuiBox& box)
 {
-    const int HMargin = 10, VMargin = 6;
+    const int HMargin = 20, VMargin = 6;
     QRectF rc(box.pos, textSize(painter, box.name));
     rc.adjust(-HMargin, -VMargin, HMargin, VMargin);
     return rc;
@@ -185,7 +185,7 @@ void SimVisualizer::paint(QPainter *painter, const QRect& rect)
     if (!m_sim)
         return;
     QFont f;
-    const int FontSize = 16;
+    const int FontSize = 18;
     const double PortRadius = 4, MaxPortRadius = 7;
     f.setPixelSize(FontSize);
     painter->setFont(f);

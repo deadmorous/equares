@@ -94,6 +94,7 @@ void Animator::stop()
         return;
     killTimer(m_timerId);
     m_timerId = -1;
+    m_subStep = 0;
     emit endAnimation();
 }
 

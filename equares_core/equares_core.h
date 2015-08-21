@@ -26,7 +26,7 @@ License agreement can be found in file LICENSE.md in the EquaRes root directory.
 #include "EquaresException.h"
 #include "equares_exec.h"
 
-#define EQUARES_DUMP_SIMULATION_LOG
+// #define EQUARES_DUMP_SIMULATION_LOG
 
 #ifdef EQUARES_DUMP_SIMULATION_LOG
 QTextStream& equaresSimLog();

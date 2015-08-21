@@ -46,7 +46,9 @@ private:
 private slots:
     void openFile();
     void openAnimation();
+    void rewindToTheBeginning();
     void recordVideo();
+    void recordPngImages();
 };
 
 #endif // MAINWINDOW_H

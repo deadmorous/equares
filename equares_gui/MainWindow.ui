@@ -37,7 +37,10 @@
     <addaction name="actionOpen_animation"/>
     <addaction name="action_Start"/>
     <addaction name="actionStop"/>
+    <addaction name="actionRe_wind_to_the_beginning"/>
+    <addaction name="separator"/>
     <addaction name="actionRecord_video"/>
+    <addaction name="action_Record_PNG_sequence"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Animation"/>
@@ -97,6 +100,19 @@
   <action name="actionRecord_video">
    <property name="text">
     <string>Record &amp;video</string>
+   </property>
+  </action>
+  <action name="action_Record_PNG_sequence">
+   <property name="text">
+    <string>&amp;Record PNG sequence</string>
+   </property>
+  </action>
+  <action name="actionRe_wind_to_the_beginning">
+   <property name="text">
+    <string>Re&amp;wind to the beginning</string>
+   </property>
+   <property name="shortcut">
+    <string>Home</string>
    </property>
   </action>
  </widget>
