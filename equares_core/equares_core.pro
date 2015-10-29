@@ -12,6 +12,7 @@ QT       += script
 TARGET = equares_core
 TEMPLATE = lib
 DEFINES += EQUARES_CORE_LIBRARY
+# DEFINES += EQUARES_DUMP_SIMULATION_LOG
 
 contains(DEFINES, EQUARES_CORE_STATIC) {
     CONFIG += staticlib
