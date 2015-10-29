@@ -20,7 +20,13 @@ contains(DEFINES, EQUARES_CORE_STATIC) {
 !isEmpty(ACML_DIR) {
     INCLUDEPATH += $$ACML_DIR/include
     DEFINES += WITH_ACML
-    unix: LIBS += -L$$ACML_DIR/lib -lacml
+    unix{
+        LIBS += -L$$ACML_DIR/lib -lacml
+
+        # http://stackoverflow.com/questions/27384406/setting-rpath-order-in-qmake
+        QMAKE_LFLAGS_RPATH=
+        QMAKE_LFLAGS += "-Wl,-rpath,$$ACML_DIR/lib"
+    }
     win32: LIBS += -L$$ACML_DIR/lib -llibacml_dll
 }
 

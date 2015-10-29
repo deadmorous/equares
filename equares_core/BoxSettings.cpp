@@ -26,7 +26,7 @@ static void readPtrListSettings(const QList<ElementType*>& lst, QSettings &setti
 }
 
 template<class ElementType, class Object, class Setter>
-static void readListSettings(Object& object, Setter setter, QSettings &settings, const QString& name)
+static void readListSettings(Object object, Setter setter, QSettings &settings, const QString& name)
 {
     int n = settings.beginReadArray(name);
     QList<ElementType> lst;
