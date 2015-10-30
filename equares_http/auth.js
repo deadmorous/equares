@@ -190,7 +190,7 @@ var activatorConfig = {
     emailProperty: 'email',
     url: (function() {
         var settings = JSON.parse(fs.readFileSync('email-settings.json', {encoding: 'utf8'}))
-        return settings.url.replace('<email>', escape(settings.email))
+        return settings.url
     })(),
     templates: path.join(__dirname, 'email-templates'),
     id: '_id',

@@ -24,6 +24,8 @@ SOURCES += \
 
 LIBS += -lequares_core
 
+unix: QMAKE_LFLAGS += "-Wl,-rpath,$$DESTDIR"
+
 HEADERS += \
     JsInputSplitter.h \
     JsRunner.h \

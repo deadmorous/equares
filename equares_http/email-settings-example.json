@@ -1,4 +1,4 @@
 {
-    "url": "protocol://user:pass@hostname:port/domain/<email>[?secureConnection=true]",
-    "email": "Sender Name <sender@server.com>"
+    "url": "smtp://user:pass@smtp.gmail.com:465/gmail.com/user@gmail.com?secureConnection=true"
 }
+
