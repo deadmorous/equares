@@ -1,6 +1,7 @@
 # libc++
 operator new(unsigned long)
 operator delete(void*)
+operator delete(void*, unsigned long)
 
 # TODO: Find the right libs for these symbols
 __gxx_personality_v0
