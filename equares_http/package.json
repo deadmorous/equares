@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "line-input-stream": "1.0.1",
-    "express": "3.4.8",
+    "express": "4.17.1",
     "jade": "*",
     "mongodb": "*",
     "mongoose": "~3.6.4",
