@@ -10,7 +10,7 @@
     "express": "3.4.8",
     "jade": "*",
     "mongodb": "*",
-    "mongoose": "~3.6.4",
+    "mongoose": "~5.7.7",
     "mongoose-text-search": "0.0.2",
     "connect-mongo": "0.8.0",
     "passport": "*",
